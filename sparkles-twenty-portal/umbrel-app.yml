@@ -1,0 +1,44 @@
+manifestVersion: 1
+id: sparkles-twenty-portal
+category: productivity
+name: Twenty Customer Portal
+version: "2.0.0"
+tagline: Invite-only customer portal for Twenty CRM (third-party)
+description: >-
+  Community-built customer portal for Twenty CRM
+  (lilremark/twentycrmclientportal v2.0): customers sign in with
+  invite-only accounts and see only the records scoped to them. The
+  portal talks to Twenty server-side; the Twenty API key never reaches
+  the browser.
+
+
+  !!! SECURITY WARNING - READ BEFORE INSTALLING !!!
+  This is a THIRD-PARTY app. Its invite-only login is the ONLY gate -
+  there is deliberately no Umbrel authentication in front of it, because
+  customers are not Umbrel users. A security review is REQUIRED before
+  this portal touches real customer data, and it must NOT be exposed to
+  the public internet until that review is done. Pilot it on
+  Tailscale/LAN only first.
+
+
+  Twenty itself stays private on the tailnet - never publish Twenty to
+  make this portal work. After install: set the real portal domain in
+  NEXTAUTH_URL (docker-compose.yml), and enter the Twenty API key in
+  the portal (stored server-side only).
+
+developer: lilremark
+website: https://github.com/lilremark/twentycrmclientportal
+dependencies:
+  - sparkles-twenty
+repo: https://github.com/lilremark/twentycrmclientportal
+support: https://github.com/lilremark/twentycrmclientportal/issues
+port: 3002
+gallery: []
+path: ""
+releaseNotes: >-
+  Initial packaging of twentycrmclientportal v2.0 for the Sparkles
+  store. PILOT ONLY: do not expose publicly and do not load real
+  customer data until the planned security review is complete. Set
+  NEXTAUTH_URL to the real domain before any public use - it ships
+  with a placeholder. The app image coordinates in docker-compose.yml
+  are marked VERIFY before install.
