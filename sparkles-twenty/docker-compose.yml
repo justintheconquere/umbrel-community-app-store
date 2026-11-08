@@ -1,0 +1,77 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: sparkles-twenty_server_1
+      APP_PORT: 3000
+
+  server:
+    image: twentycrm/twenty:v2.56.1
+    restart: on-failure
+    depends_on:
+      - db
+      - redis
+    environment:
+      # SERVER_URL uses the Tailscale IP, not ufo.local: the owner's
+      # Android phone cannot resolve .local names, and the raw Tailscale
+      # IP is the address verified working. Twenty hard-wires this URL
+      # into links and redirects, so it must be the reachable address.
+      SERVER_URL: http://100.122.244.66:3000
+      FRONTEND_URL: http://100.122.244.66:3000
+      PG_DATABASE_URL: postgres://twenty:${APP_TWENTY_DB_PASSWORD}@db:5432/default
+      REDIS_URL: redis://redis:6379
+      APP_SECRET: ${APP_TWENTY_APP_SECRET}
+      STORAGE_TYPE: local
+      SIGN_IN_PREFILLED: "false"
+    volumes:
+      - ${APP_DATA_DIR}/data/server-local-data:/app/packages/twenty-server/.local-storage
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      default:
+        ipv4_address: $APP_TWENTY_IP
+
+  worker:
+    image: twentycrm/twenty:v2.56.1
+    restart: on-failure
+    command: yarn worker:prod
+    depends_on:
+      - server
+    environment:
+      SERVER_URL: http://100.122.244.66:3000
+      FRONTEND_URL: http://100.122.244.66:3000
+      PG_DATABASE_URL: postgres://twenty:${APP_TWENTY_DB_PASSWORD}@db:5432/default
+      REDIS_URL: redis://redis:6379
+      APP_SECRET: ${APP_TWENTY_APP_SECRET}
+      STORAGE_TYPE: local
+      DISABLE_DB_MIGRATIONS: "true"
+    volumes:
+      - ${APP_DATA_DIR}/data/server-local-data:/app/packages/twenty-server/.local-storage
+    networks:
+      default:
+        ipv4_address: $APP_TWENTY_WORKER_IP
+
+  db:
+    image: postgres:16
+    restart: on-failure
+    environment:
+      POSTGRES_USER: twenty
+      POSTGRES_PASSWORD: ${APP_TWENTY_DB_PASSWORD}
+      POSTGRES_DB: default
+    volumes:
+      - ${APP_DATA_DIR}/data/db:/var/lib/postgresql/data
+    networks:
+      default:
+        ipv4_address: $APP_TWENTY_DB_IP
+
+  redis:
+    image: redis:7.4-alpine
+    restart: on-failure
+    command: redis-server --maxmemory-policy noeviction
+    networks:
+      default:
+        ipv4_address: $APP_TWENTY_REDIS_IP
