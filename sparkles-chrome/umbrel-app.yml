@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-chrome
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-chrome.svg
 category: productivity
 name: Chrome
 version: "1.0.0"
