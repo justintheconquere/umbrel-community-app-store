@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-haveno
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-haveno.svg
 category: crypto
 name: Haveno (Daemon)
 version: "0.1.0"
