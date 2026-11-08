@@ -1,0 +1,2 @@
+export APP_GOOSE_AGENT_IP="10.21.41.10"
+export APP_GOOSE_WEB_IP="10.21.41.11"
