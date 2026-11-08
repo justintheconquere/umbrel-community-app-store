@@ -1,0 +1,48 @@
+version: "3.7"
+
+services:
+  # NOTE: no app_proxy service on purpose. This is a public-facing
+  # (class B) app: customers are not Umbrel users, so Umbrel auth must
+  # NOT gate it. The port is published directly and the portal's own
+  # invite-only auth is the only gate - see the security warning in
+  # umbrel-app.yml. Pilot on Tailscale/LAN before any public exposure.
+  app:
+    # VERIFY image coordinates before install: upstream
+    # (lilremark/twentycrmclientportal) may not publish a prebuilt
+    # image under these coordinates - if this pull fails, the app must
+    # be built from the upstream repo and the image reference updated.
+    image: ghcr.io/lilremark/twentycrmclientportal:v2.0.0
+    restart: on-failure
+    depends_on:
+      - db
+    ports:
+      - "3002:3000"
+    environment:
+      DATABASE_URL: postgres://portal:${APP_TWENTY_PORTAL_DB_PASSWORD}@db:5432/portal
+      # sparkles-twenty server address. Umbrel injects the dependency's
+      # exports, so APP_TWENTY_IP resolves to the Twenty server's
+      # static IP (10.21.30.10 in sparkles-twenty/exports.sh).
+      TWENTY_BASE_URL: http://${APP_TWENTY_IP}:3000
+      # Entered post-install from the Twenty UI/API settings and stored
+      # server-side only. Never commit a real key here.
+      TWENTY_API_KEY: ""
+      NEXTAUTH_SECRET: ${APP_TWENTY_PORTAL_NEXTAUTH_SECRET}
+      # PLACEHOLDER: replace with the real public portal domain before
+      # any public use, e.g. https://portal.<his-domain>
+      NEXTAUTH_URL: https://portal.example.com
+    networks:
+      default:
+        ipv4_address: $APP_TWENTY_PORTAL_IP
+
+  db:
+    image: postgres:17-alpine
+    restart: on-failure
+    environment:
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: ${APP_TWENTY_PORTAL_DB_PASSWORD}
+      POSTGRES_DB: portal
+    volumes:
+      - ${APP_DATA_DIR}/data/db:/var/lib/postgresql/data
+    networks:
+      default:
+        ipv4_address: $APP_TWENTY_PORTAL_DB_IP
