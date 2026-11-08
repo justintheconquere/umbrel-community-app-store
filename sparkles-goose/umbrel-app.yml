@@ -1,5 +1,10 @@
 manifestVersion: 1
+# Parked 2026-11-08 at Justin's direction: this headless package is not
+# what he had in mind — he will try the Goose GUI inside sparkles-arch-phosh
+# instead. disabled: true hides the app from the store until revisited.
+disabled: true
 id: sparkles-goose
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-goose.svg
 category: developer
 name: Goose (EXPERIMENTAL)
 version: "0.1.0"
