@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-bitcart
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-bitcart.svg
 category: crypto
 name: Bitcart (XMR only)
 version: "0.10.2.0"
