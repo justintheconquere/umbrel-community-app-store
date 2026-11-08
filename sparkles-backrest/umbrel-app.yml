@@ -1,0 +1,55 @@
+manifestVersion: 1
+id: sparkles-backrest
+category: files
+name: Backrest
+version: "1.9.2"
+tagline: Encrypted, deduplicated backups (restic) with a web UI
+description: >-
+  Backrest is a web UI for restic: encrypted, deduplicated, scheduled
+  snapshots with restore browsing, hooks and failure alerts. Use it to
+  back up Umbrel app data to an external USB drive.
+
+
+  USB DRIVE SETUP (do this before creating repositories): format the
+  drive ext4 with the label umbrel-backup, plug it in, then attach it to
+  this app in umbrelOS via Settings - this app's Storage / custom folder
+  option - and point a Backrest repository at the attached folder. See
+  the release notes for the full checklist, including the mandatory
+  mount-check hook and saving the restic repository password in your
+  password manager (lose the password, lose the backups).
+
+
+  Backup SOURCES: all Umbrel app data is mounted read-only at
+  /backup-sources/app-data inside the container - add folders from there
+  as backup sources in your Backrest plans. Suggested scope: Twenty,
+  the Twenty portal, BTCPay/Bitcart data, Conduit, SimpleX identity,
+  strfry config, Chrome profile. Skip LocalAI/Ollama models and the
+  Monero chain - both are re-downloadable/re-syncable.
+
+developer: Gareth George
+website: https://github.com/garethgeorge/backrest
+dependencies: []
+repo: https://github.com/garethgeorge/backrest
+support: https://github.com/garethgeorge/backrest/issues
+port: 9898
+gallery: []
+path: ""
+releaseNotes: >-
+  Initial packaging of Backrest v1.9.2 for the Sparkles store.
+
+
+  USB repository checklist:
+  1. Format the external drive ext4, label it umbrel-backup.
+  2. Plug it into the Umbrel and attach it to this app as a custom
+     folder (umbrelOS Settings - app Storage settings).
+  3. In Backrest, create a repository pointing at that attached folder.
+  4. Save the repository password in your password manager NOW - it
+     cannot be recovered and the backups are unreadable without it.
+  5. On EVERY plan that writes to the USB repository, add a
+     "before backup" hook that aborts if the drive is not mounted,
+     so backups never silently write to the internal disk instead.
+     Example hook command (adjust the path to your attached folder):
+
+     mountpoint -q /path/to/attached/umbrel-backup || exit 1
+
+  6. Run one manual backup and one test restore before trusting it.
