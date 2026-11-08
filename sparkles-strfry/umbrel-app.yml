@@ -1,0 +1,37 @@
+manifestVersion: 1
+id: sparkles-strfry
+category: social
+name: strfry (Nostr Relay)
+version: "1.0.0"
+tagline: Nostr relay for Voodoo Bazaar seller identity
+description: >-
+  strfry is a fast, single-binary Nostr relay (LMDB-backed). This one is
+  the Voodoo Bazaar relay: seller identity and discovery for the
+  marketplace - Nostr keys (not PGP) are how sellers are known, and the
+  relay carries NIP-05 style identity and Shopstr/marketplace traffic.
+
+
+  The relay port is published directly (relays cannot sit behind Umbrel
+  app auth); its public face is meant to be wss://relay.voodoobazaar.com
+  via the existing Cloudflare Tunnel to localhost:7777.
+
+
+  Before any public exposure, enable the write-policy allowlist included
+  (commented) in strfry.conf - an open relay fills with spam within
+  days. The event database lives in this app's data directory.
+developer: hoytech
+website: https://github.com/hoytech/strfry
+dependencies: []
+repo: https://github.com/hoytech/strfry
+support: https://github.com/hoytech/strfry/issues
+port: 7777
+gallery: []
+path: ""
+releaseNotes: >-
+  First Sparkles packaging. strfry.conf is generated into the app data
+  directory on first start (relay name "Voodoo Bazaar"); the write-policy
+  plugin block is included but COMMENTED OUT - enable it with an npub
+  allowlist (you + approved sellers) before exposing the relay publicly.
+  PIN BEFORE INSTALL: the dockurr/strfry image is referenced by the
+  latest tag on purpose (upstream publishes latest-only) - pin it by
+  digest at first install; see the loud comment in docker-compose.yml.
