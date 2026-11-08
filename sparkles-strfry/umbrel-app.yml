@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-strfry
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-strfry.svg
 category: social
 name: strfry (Nostr Relay)
 version: "1.0.0"
