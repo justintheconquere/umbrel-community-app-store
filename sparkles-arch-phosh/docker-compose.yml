@@ -1,0 +1,35 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # <app-id>_<docker-service-name>_1
+      APP_HOST: sparkles-arch-phosh_web_1
+      APP_PORT: 8080
+
+  desktop:
+    # Custom image built by this repo's GitHub Actions (docker/arch-phosh).
+    image: ghcr.io/justintheconquere/sparkles-arch-phosh:v0.1.0
+    restart: on-failure
+    environment:
+      TZ: America/New_York
+      PHOC_HEADLESS_WIDTH: "720"
+      PHOC_HEADLESS_HEIGHT: "1440"
+    volumes:
+      - ${APP_DATA_DIR}/data/home:/home/user
+    networks:
+      default:
+        ipv4_address: $APP_ARCH_PHOSH_DESKTOP_IP
+
+  web:
+    # noVNC + websockify front end. PIN EXCEPTION check before install:
+    # verify/pin the current theasp/novnc tag — upstream tags irregularly.
+    image: theasp/novnc:latest
+    restart: on-failure
+    environment:
+      VNC_SERVER: desktop:5900
+    depends_on:
+      - desktop
+    networks:
+      default:
+        ipv4_address: $APP_ARCH_PHOSH_WEB_IP
