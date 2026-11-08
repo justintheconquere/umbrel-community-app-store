@@ -22,8 +22,10 @@ marked `VERIFY` inline in the file it concerns.
   paths are marked VERIFY-ON-BOX there.
 
 ## sparkles-twenty-portal
-- **Image coordinates unverified**: `ghcr.io/lilremark/twentycrmclientportal:v2.0.0`.
-  Upstream may publish elsewhere or require building from source.
+- ~~Image coordinates unverified~~ FIXED 2026-11-08: upstream publishes
+  on Docker Hub as `lilremark/twentycrmclientportal` — package now uses
+  tag 2.1.1 (the GHCR coordinates in v1 did not exist; that was one of
+  the failed installs).
 - Set a real `NEXTAUTH_URL` domain before any public exposure; security
   review before customer data (third-party code, invite-only auth is the
   only gate).
@@ -51,15 +53,17 @@ marked `VERIFY` inline in the file it concerns.
   subpath routing for the admin SPA vs Bitcart's official proxy.
 
 ## sparkles-localai
-- Dockerfile: verify the exact quay.io tag for the v4.12.1 CUDA 13 ffmpeg
-  variant, and that the CPU backend's glibc loader is findable in the
-  image (the build fails loudly if not — a failed CI run is the check).
-- After the GHCR image exists, install and benchmark against the known
-  numbers (~140 tok/s qwen3.8; ~1s long-prompt) before swapping endpoints.
+- v0.2 (2026-11-08) uses the official `localai/localai:v4.12.1-gpu-nvidia-cuda-13`
+  image (verified on Docker Hub) instead of the un-buildable GHCR custom
+  image. Install and benchmark against the known numbers (~140 tok/s
+  qwen3.8; ~1s long-prompt) before swapping endpoints; watch the first
+  model load for backend errors (the 2026-11-06 glibc issue would show
+  there). The custom Dockerfile route stays in docker/localai.
 
 ## sparkles-chrome
-- Verify `lscr.io/linuxserver/chrome:142.0.7444.175` exists (fallback:
-  linuxserver/chromium).
+- ~~Verify chrome tag~~ FIXED 2026-11-08: `142.0.7444.175` did not exist;
+  the real pinned tag is `142.0.7444.175-1-ls57` (verified via GHCR tag
+  list). That was one of the failed installs.
 
 ## sparkles-gluetun
 - Verify `qmcgaw/gluetun:v3.40.0`. WireGuard key + addresses are empty
@@ -98,5 +102,9 @@ marked `VERIFY` inline in the file it concerns.
 - Check current Haveno/RetoSwap security releases before real funds.
 
 ## sparkles-arch-phosh (experimental)
-- Verify/pin the `theasp/novnc` tag (currently `:latest` with a PIN
-  EXCEPTION note) and phoc's session config path in current Arch packages.
+- v0.2 (2026-11-08): rewritten to use the official `archlinux` image with
+  first-start package installation (v0.1's GHCR image did not exist —
+  that was the failed install). First start takes several minutes.
+  Still to confirm at runtime: phoc's session config path
+  (/usr/share/phosh/phoc.ini) in current Arch packages, and the
+  `theasp/novnc` tag (verified present on Docker Hub; `:latest` only).
