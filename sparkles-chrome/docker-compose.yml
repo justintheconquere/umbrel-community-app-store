@@ -11,7 +11,7 @@ services:
     # before installing (linuxserver publishes per-build tags like this one).
     # Fallback if the tag is missing: lscr.io/linuxserver/chromium, pinned to
     # a version tag the same way - same Selkies base, same /config layout.
-    image: lscr.io/linuxserver/chrome:142.0.7444.175
+    image: lscr.io/linuxserver/chrome:142.0.7444.175-1-ls57
     restart: on-failure
     environment:
       PUID: "1000"
