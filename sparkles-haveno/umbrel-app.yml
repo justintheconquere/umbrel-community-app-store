@@ -1,0 +1,58 @@
+manifestVersion: 1
+id: sparkles-haveno
+category: crypto
+name: Haveno (Daemon)
+version: "0.1.0"
+tagline: EXPERIMENTAL — headless Haveno client daemon for install/uninstall testing
+description: >-
+  EXPERIMENTAL / TESTING ONLY. This app runs the Haveno client daemon
+  (havenod) headless — there is no graphical interface. Haveno is a
+  non-custodial, peer-to-peer Monero exchange (a Bisq fork) whose clients
+  find each other and trade over Tor with 2-of-3 multisig escrow.
+
+
+  The daemon connects to the Monero node you already run on this Umbrel
+  (the stock Monero app, declared as a dependency) and joins the Haveno
+  network over Tor. It publishes NO ports: peer-to-peer traffic rides Tor,
+  and the local gRPC API stays inside the Umbrel app network, protected by
+  a generated password.
+
+
+  WARNING — FUNDS-CRITICAL DATA: the app's data folder contains your
+  Haveno wallet and seed. Losing it can mean losing funds. Back it up
+  (encrypted) before uninstalling or updating, and check current
+  Haveno / RetoSwap security releases before trading with real funds —
+  Haveno-related exploits were reported in 2026.
+developer: Haveno
+website: https://haveno.exchange
+dependencies:
+  - monero
+repo: https://github.com/haveno-dex/haveno
+support: https://github.com/haveno-dex/haveno/issues
+port: 8013
+gallery: []
+path: ""
+releaseNotes: >-
+  First packaging (v0.1.0) — a test harness, not a finished product.
+
+
+  NETWORK CHOICE IS A FIRST-RUN DECISION: the daemon is configured for
+  XMR_MAINNET. The live Haveno network today is RetoSwap, which runs the
+  haveno-reto fork; upstream haveno-dex's own builds historically default
+  to stagenet and upstream has never launched its own mainnet network.
+  Confirm which network the container image actually joins BEFORE funding
+  the wallet — if it lands on stagenet, everything here is test funds only.
+
+
+  IMAGE WARNING (VERIFY): upstream haveno-dex publishes no official
+  container image. The compose file pins the only published daemon image
+  found (havenodex/haveno-daemon, Docker Hub), but its single tag is an
+  ARM64 build from 2024-10 and this Umbrel is amd64 — expect it NOT to run
+  natively. An amd64 image will likely need to be built from the
+  haveno-dex (or haveno-reto) source and this package re-pinned. See the
+  VERIFY comments in docker-compose.yml.
+
+
+  The daemon's API password is generated on first start and stored in the
+  app's .env file (see exports.sh). The wallet seed lives in the data
+  folder — back it up before doing anything else.

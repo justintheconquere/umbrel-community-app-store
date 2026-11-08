@@ -1,0 +1,2 @@
+export APP_LOCALAI_IP="10.21.35.10"
+export APP_LOCALAI_PORT="8080"

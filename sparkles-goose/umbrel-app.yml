@@ -1,0 +1,40 @@
+manifestVersion: 1
+id: sparkles-goose
+category: developer
+name: Goose (EXPERIMENTAL)
+version: "0.1.0"
+tagline: EXPERIMENTAL - headless Goose AI agent, pointed at local models
+description: >-
+  EXPERIMENTAL PACKAGE. Goose (the open-source AI agent from Block, now
+  under the Linux Foundation's Agentic AI Foundation - aaif-goose/goose)
+  packaged headless: there is no official Goose server image with a web
+  UI, so this app downloads a pinned Goose release binary into its data
+  directory on first start and runs it in serve mode against local,
+  OpenAI-compatible models (LocalAI / Ollama on this machine).
+
+
+  Goose EXECUTES SHELL COMMANDS in its workspace. It has no Docker
+  socket and no access outside its workspace volume, it sits behind
+  Umbrel auth, and it must NEVER be exposed publicly. The app page is a
+  status/help page; Goose itself is driven from its CLI/API.
+
+
+  Several upstream details (release asset name, serve command) move
+  between Goose versions - read the VERIFY notes in docker-compose.yml
+  and the release notes before installing.
+developer: Agentic AI Foundation (Block)
+website: https://block.github.io/goose/
+dependencies: []
+repo: https://github.com/aaif-goose/goose
+support: https://github.com/aaif-goose/goose/issues
+port: 8012
+gallery: []
+path: ""
+releaseNotes: >-
+  EXPERIMENTAL v0.1.0. VERIFY before install: (1) the pinned Goose
+  version and the exact release asset name/URL for the x86_64 musl Linux
+  build on github.com/aaif-goose/goose/releases, (2) that the binary's
+  headless server subcommand is still "goose serve" in that version,
+  (3) OPENAI_HOST in docker-compose.yml points at your model server
+  (LocalAI or Ollama). First start downloads the binary into the app
+  data directory; later starts reuse it. Never expose this app publicly.

@@ -1,0 +1,95 @@
+version: "3.7"
+
+# BTCPay Server — Monero ONLY.
+# No Bitcoin node, no NBXplorer: the Monero plugin talks to the wallet
+# service below, which talks to the official Umbrel Monero app's node
+# (declared as a dependency in umbrel-app.yml, so Umbrel guarantees the
+# APP_MONERO_* values below are exported and the node is installed).
+#
+# No app_proxy on purpose: this is a public checkout server with its own
+# auth. Umbrel's login in front would break buyers, payment callbacks and
+# webhooks, so the web port is published directly and the public route is
+# pay.voodoobazaar.com via the existing cloudflared tunnel.
+# Monero RPC stays on the internal Umbrel network — it NEVER goes through
+# Cloudflare.
+
+services:
+
+  server:
+    image: btcpayserver/btcpayserver:2.4.7
+    restart: on-failure
+    depends_on:
+      - db
+      - wallet
+    # Public web port (host 23000 -> BTCPay's internal 8080).
+    ports:
+      - "23000:8080"
+    environment:
+      BTCPAY_POSTGRES: "Host=db;Database=btcpay;Username=btcpay;Password=${APP_BTCPAY_MONERO_DB_PASSWORD};Port=5432"
+      BTCPAY_NETWORK: mainnet
+      BTCPAY_HOST: https://pay.voodoobazaar.com
+      # Future Tor host for Voodoo Bazaar: when the BTCPay .onion exists,
+      # uncomment and set it (e.g. BTCPAY_ADDITIONALHOSTS: "http://<onion>").
+      # BTCPAY_ADDITIONALHOSTS: ""
+      # Monero daemon = the stock Umbrel Monero app's node. APP_MONERO_NODE_IP
+      # and APP_MONERO_RPC_PORT come from that app's exports.sh (dependency).
+      # The node has RPC login enabled: credentials are exported by the
+      # Monero app as APP_MONERO_RPC_USER / APP_MONERO_RPC_PASS (the wallet
+      # service below uses them for --daemon-login). If the Monero plugin
+      # asks for daemon credentials in its settings UI, use those same values.
+      BTCPAY_XMR_DAEMON_URI: http://${APP_MONERO_NODE_IP}:${APP_MONERO_RPC_PORT}
+      BTCPAY_XMR_WALLET_DAEMON_URI: http://wallet:18082
+      BTCPAY_XMR_WALLET_DAEMON_WALLETDIR: /walletdata
+    volumes:
+      # BTCPay data dir. The Plugins folder lives under here, so plugins
+      # installed from the BTCPay UI persist across app updates.
+      - ${APP_DATA_DIR}/data/server:/datadir
+    networks:
+      default:
+        ipv4_address: $APP_BTCPAY_MONERO_IP
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: btcpay
+      POSTGRES_PASSWORD: ${APP_BTCPAY_MONERO_DB_PASSWORD}
+      POSTGRES_DB: btcpay
+    volumes:
+      - ${APP_DATA_DIR}/data/db:/var/lib/postgresql/data
+    networks:
+      default:
+        ipv4_address: $APP_BTCPAY_MONERO_DB_IP
+
+  wallet:
+    # This image carries monero-wallet-rpc plus the tx-notify callback
+    # scripts the BTCPay Monero plugin relies on.
+    # VERIFY: exact current tag of btcpayserver/monero on Docker Hub
+    # (0.18.5.1 matches the Monero v0.18.5.x line; bump deliberately).
+    image: btcpayserver/monero:0.18.5.1
+    restart: unless-stopped
+    # Runs monero-wallet-rpc against Justin's existing node.
+    # --daemon-login uses the node's RPC credentials exported by the Monero
+    # app as plain user:password. VERIFY: if only APP_MONERO_RPC_AUTH is
+    # visible to dependent apps, note it holds the hashed rpcauth form meant
+    # for monerod's own config — wallet-rpc needs the plain APP_MONERO_RPC_USER
+    # / APP_MONERO_RPC_PASS pair used here.
+    # VERIFY: callback script path inside the btcpayserver/monero image
+    # (/monero/on-new-tx.sh per the btcpay-monero plugin docs).
+    command: >-
+      monero-wallet-rpc
+      --daemon-address=${APP_MONERO_NODE_IP}:${APP_MONERO_RPC_PORT}
+      --daemon-login=${APP_MONERO_RPC_USER}:${APP_MONERO_RPC_PASS}
+      --rpc-bind-ip=0.0.0.0
+      --rpc-bind-port=18082
+      --confirm-external-bind
+      --wallet-dir=/walletdata
+      --tx-notify=/monero/on-new-tx.sh %s
+      --log-file=/walletdata/wallet.log
+    volumes:
+      - ${APP_DATA_DIR}/data/wallet:/walletdata
+    # Deliberately NO published ports: wallet RPC (18082) is reachable only
+    # by the server service on this app's internal network. Never expose it.
+    networks:
+      default:
+        ipv4_address: $APP_BTCPAY_MONERO_WALLET_IP

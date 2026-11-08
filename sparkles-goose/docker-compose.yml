@@ -1,0 +1,89 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # Only the status/help page is proxied. The Goose agent itself is
+      # NEVER exposed - no published ports on the agent service at all.
+      APP_HOST: sparkles-goose_web_1
+      APP_PORT: 80
+
+  agent:
+    # EXPERIMENTAL: Goose ships no official server container image, so
+    # the agent runs on a plain Debian base and downloads the pinned
+    # upstream release binary on first start (nothing is built on this
+    # machine; the binary persists in the app data directory).
+    image: debian:bookworm-slim
+    restart: on-failure
+    working_dir: /workspace
+    environment:
+      # Local OpenAI-compatible model server. DEFAULT below assumes the
+      # model server is reachable on the host gateway (e.g. Ollama's or
+      # LocalAI's published port). Alternatives on this machine:
+      #   sparkles-localai app:  http://10.21.35.10:8080/v1
+      #   host Ollama:           http://host.docker.internal:11434
+      #   host LocalAI proxy:    http://host.docker.internal:8793/v1
+      GOOSE_PROVIDER: openai
+      OPENAI_HOST: "http://host.docker.internal:11434"
+      # Local endpoints ignore the key, but Goose requires one to exist.
+      OPENAI_API_KEY: "local"
+      GOOSE_MODEL: gpt-oss:20b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Deliberately NO docker socket and NO host mounts: Goose executes
+    # shell commands, so its world is /workspace and its config dir only.
+    volumes:
+      - ${APP_DATA_DIR}/data/bin:/opt/goose-bin
+      - ${APP_DATA_DIR}/data/workspace:/workspace
+      - ${APP_DATA_DIR}/data/config:/root/.config/goose
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        # VERIFY (see umbrel-app.yml releaseNotes): version, asset name
+        # and layout for github.com/aaif-goose/goose releases.
+        GOOSE_VERSION="v1.16.0"
+        GOOSE_URL="https://github.com/aaif-goose/goose/releases/download/$${GOOSE_VERSION}/goose-x86_64-unknown-linux-musl.tar.bz2"
+        if [ ! -x /opt/goose-bin/goose ]; then
+          apt-get update && apt-get install -y --no-install-recommends curl ca-certificates bzip2 procps;
+          echo "Downloading Goose $${GOOSE_VERSION} ...";
+          mkdir -p /tmp/goose && curl -fsSL "$${GOOSE_URL}" | tar -xj -C /tmp/goose;
+          FOUND=$$(find /tmp/goose -name goose -type f | head -1);
+          install -m 755 "$${FOUND}" /opt/goose-bin/goose;
+        fi
+        # VERIFY: headless server subcommand name in this Goose version
+        # ("goose serve"); adjust the line below if upstream renamed it.
+        exec /opt/goose-bin/goose serve --host 0.0.0.0 --port 3000
+    networks:
+      default:
+        ipv4_address: $APP_GOOSE_AGENT_IP
+
+  web:
+    image: nginx:1.27-alpine
+    restart: on-failure
+    command:
+      - sh
+      - -c
+      - |
+        cat > /usr/share/nginx/html/index.html <<'HTML'
+        <!doctype html>
+        <html><head><title>Goose (experimental)</title></head>
+        <body style="font-family:sans-serif;max-width:44em;margin:2em auto;padding:0 1em">
+        <h1>Goose - headless agent (EXPERIMENTAL)</h1>
+        <p>Goose has no web UI. This app runs it headless, pointed at your
+        local models (OPENAI_HOST in the app's docker-compose.yml).</p>
+        <h2>Talk to it</h2>
+        <p>API (inside this app's network only, never published):
+        http://10.21.41.10:3000 - or use the CLI by exec-ing into the
+        agent container and running goose commands in /workspace.</p>
+        <h2>Safety</h2>
+        <p>Goose executes shell commands in its workspace volume. It has no
+        Docker socket and no host access. Never publish its port, never
+        put Umbrel auth in front of a public route to it.</p>
+        </body></html>
+        HTML
+        exec nginx -g 'daemon off;'
+    networks:
+      default:
+        ipv4_address: $APP_GOOSE_WEB_IP

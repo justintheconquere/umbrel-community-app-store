@@ -1,0 +1,77 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: sparkles-gluetun_web_1
+      APP_PORT: 80
+
+  vpn:
+    # VERIFY: confirm tag v3.40.0 exists on Docker Hub (qmcgaw/gluetun)
+    # before installing; bump to the current v3.x release if it moved.
+    image: qmcgaw/gluetun:v3.40.0
+    restart: on-failure
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      VPN_SERVICE_PROVIDER: custom
+      VPN_TYPE: wireguard
+      # !!! EMPTY ON PURPOSE !!!
+      # Set the real WireGuard private key ON THIS MACHINE ONLY, in the
+      # app's local compose override / environment after install.
+      # Private keys are never committed to the app store repo.
+      WIREGUARD_PRIVATE_KEY: ""
+      # Placeholder: your WireGuard interface address from your provider,
+      # e.g. "10.64.0.2/32" - set it in the same local override.
+      WIREGUARD_ADDRESSES: "10.64.0.2/32"
+      # Placeholder for provider-based configs; unused with "custom".
+      SERVER_COUNTRIES: ""
+      # Built-in HTTP proxy other apps/devices can use: <umbrel-ip>:8888
+      HTTPPROXY: "on"
+      HTTPPROXY_LISTENING_ADDRESS: ":8888"
+      # Control server stays INTERNAL to this app (not published):
+      # start/stop/status at http://10.21.37.10:8000 from inside the stack.
+      CONTROL_SERVER_LISTENING_ADDRESS: ":8000"
+      TZ: America/New_York
+    ports:
+      # HTTP proxy for LAN/Tailscale clients. NOTE: other Umbrel apps
+      # cannot be forced through Gluetun - an app must either use this
+      # proxy itself or embed its own Gluetun sidecar.
+      - "8888:8888"
+    networks:
+      default:
+        ipv4_address: $APP_GLUETUN_VPN_IP
+
+  web:
+    image: nginx:1.27-alpine
+    restart: on-failure
+    command:
+      - sh
+      - -c
+      - |
+        cat > /usr/share/nginx/html/index.html <<'HTML'
+        <!doctype html>
+        <html><head><title>Gluetun VPN</title></head>
+        <body style="font-family:sans-serif;max-width:44em;margin:2em auto;padding:0 1em">
+        <h1>Gluetun VPN</h1>
+        <p>The VPN tunnel itself has no web UI. This page is a status and help placeholder.</p>
+        <h2>Check your exit IP (is the tunnel up?)</h2>
+        <pre>curl -x http://192.168.4.216:8888 https://ipinfo.io/ip</pre>
+        <p>Run that from any device on your LAN/Tailscale. The IP it prints is your
+        VPN exit IP. If the command fails or shows your home IP, the tunnel is down
+        (check the vpn service logs in Umbrel).</p>
+        <h2>Who can use the tunnel</h2>
+        <p>Any app or device that supports an HTTP proxy can use
+        192.168.4.216:8888. Umbrel apps cannot be forced through it - they must
+        use the proxy themselves or embed their own Gluetun sidecar.</p>
+        <h2>Keys</h2>
+        <p>The WireGuard private key lives only on this machine (local compose
+        override), never in the app store repo.</p>
+        </body></html>
+        HTML
+        exec nginx -g 'daemon off;'
+    networks:
+      default:
+        ipv4_address: $APP_GLUETUN_WEB_IP

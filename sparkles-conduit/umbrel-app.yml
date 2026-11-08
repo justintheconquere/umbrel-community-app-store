@@ -1,0 +1,39 @@
+manifestVersion: 1
+id: sparkles-conduit
+category: social
+name: Conduit (Matrix)
+version: "1.0.0"
+tagline: Lightweight Matrix homeserver for the AssureBay portal
+description: >-
+  Conduit is a lightweight Matrix homeserver written in Rust (single
+  binary, embedded RocksDB database) - packaged here as the homeserver
+  for AssureBay's customer messaging portal.
+
+
+  Registration is CLOSED: accounts are provisioned by the agency and
+  linked to customer records, nobody can self-register. The server is
+  published directly (Matrix federation and clients cannot sit behind
+  Umbrel's app auth) and is meant to be routed through the existing
+  Cloudflare Tunnel on the agency's Matrix domain.
+
+
+  Conduit was chosen deliberately over Synapse. Be aware there is NO
+  migration path from Conduit to Synapse - the escape hatch inside the
+  family is tuwunel, which can migrate a Conduit database in place.
+developer: Conduit contributors
+website: https://conduit.rs
+dependencies: []
+repo: https://gitlab.com/famedly/conduit
+support: https://gitlab.com/famedly/conduit/-/issues
+port: 6167
+gallery: []
+path: ""
+releaseNotes: >-
+  First Sparkles packaging of Conduit v0.10.15. BEFORE FIRST START: set
+  CONDUIT_SERVER_NAME in docker-compose.yml to the real Matrix domain -
+  a server name can never be changed afterwards. For federation on a
+  delegated domain, publish /.well-known/matrix/server (and /client) on
+  the main domain pointing at this server, and route the domain through
+  the existing cloudflared tunnel to localhost:6167. VERIFY before
+  install: the exact image tag format on Docker Hub
+  (matrixconduit/matrix-conduit) for v0.10.15.

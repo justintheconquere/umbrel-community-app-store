@@ -1,0 +1,36 @@
+manifestVersion: 1
+id: sparkles-gluetun
+category: networking
+name: Gluetun VPN
+version: "1.0.0"
+tagline: WireGuard/OpenVPN tunnel with killswitch and an HTTP proxy
+description: >-
+  Gluetun VPN client container (WireGuard or OpenVPN) with a built-in
+  killswitch. It publishes an HTTP proxy on port 8888 of this machine:
+  point any app or device at umbrel-ip:8888 to send its traffic through
+  the tunnel.
+
+
+  Important limits, by design: no Umbrel app can force another app's
+  traffic through this one. Other apps must either use the HTTP proxy
+  themselves, or embed their own Gluetun sidecar. Your VPN private key is
+  NEVER stored in the app store repo - after installing, set it in the
+  app's local configuration on this machine only (see release notes).
+
+
+  The app page is a simple status/help page; the VPN itself is the "vpn"
+  service.
+developer: qmcgaw
+website: https://github.com/qdm12/gluetun
+dependencies: []
+repo: https://github.com/qdm12/gluetun
+support: https://github.com/qdm12/gluetun/issues
+port: 8010
+gallery: []
+path: ""
+releaseNotes: >-
+  First Sparkles packaging of Gluetun v3.40.0. Ships with an EMPTY
+  WireGuard private key placeholder on purpose: set WIREGUARD_PRIVATE_KEY
+  (and your provider's settings) in the app's docker-compose override /
+  environment on this machine after install - keys never go in the repo.
+  The HTTP proxy is published on host port 8888 for LAN/Tailscale use.

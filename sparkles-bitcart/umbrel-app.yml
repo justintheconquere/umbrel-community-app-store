@@ -1,0 +1,53 @@
+manifestVersion: 1
+id: sparkles-bitcart
+category: crypto
+name: Bitcart (XMR only)
+version: "0.10.2.0"
+tagline: XMR-only Bitcart test instance for side-by-side evaluation against BTCPay
+description: >-
+  A Monero-only Bitcart instance, bundled purely so it can be installed and
+  tested side by side with BTCPay Server. BTCPay remains the production
+  choice for Voodoo Bazaar because of its plugin ecosystem (Monero plugin,
+  Vendor Pay, FileSeller, Dynamic Reports, Nostr/Shopstr, Trocador) — Bitcart
+  has no comparable plugin system, but it is lighter and Monero support is
+  native rather than a plugin, which makes it a useful fallback and personal
+  store option.
+
+
+  This package is a frozen, static Umbrel compose — Bitcart's own setup.sh /
+  configurator flow is NOT run on the host. Only the XMR daemon is enabled
+  (BITCART_CRYPTOS=xmr), and it talks to the Monero node you already run: the
+  official Umbrel Monero app is declared as a dependency, and its exported
+  node address and RPC credentials are used. Monero RPC stays on the internal
+  Umbrel network and never traverses Cloudflare.
+
+
+  Public access: like BTCPay, this app does NOT sit behind the Umbrel login
+  (its store, admin and API have their own auth, and checkout must be public).
+  A small Caddy reverse proxy publishes one port and routes the store at /,
+  the admin panel at /admin and the API at /api (Bitcart's one-domain mode).
+  When you want to test it publicly, route bitcart.voodoobazaar.com
+  (placeholder test domain) in your EXISTING cloudflared tunnel to
+  localhost:3001.
+
+
+  First run: open the app and register the admin account immediately —
+  Bitcart disables registration automatically after the first (admin) user
+  signs up.
+developer: Bitcart
+website: https://bitcart.ai
+dependencies:
+  - monero
+repo: https://github.com/bitcart/bitcart
+support: https://github.com/bitcart/bitcart/issues
+port: 3001
+gallery: []
+path: ""
+releaseNotes: >-
+  Initial package: Bitcart 0.10.2.0, XMR only (BITCART_CRYPTOS=xmr), frozen
+  as a static Umbrel compose instead of running Bitcart's setup.sh. Uses the
+  official Umbrel Monero app's node via dependency exports. Bundled for
+  evaluation only — BTCPay stays the Voodoo Bazaar production processor
+  (plugins). For public testing, route bitcart.voodoobazaar.com to
+  localhost:3001 in the existing cloudflared tunnel and create the admin
+  account on first boot.

@@ -1,0 +1,41 @@
+manifestVersion: 1
+id: sparkles-simplex
+category: social
+name: SimpleX Server
+version: "1.0.0"
+tagline: Your own private SimpleX relay (SMP + XFTP) with a Tor onion
+description: >-
+  Self-hosted SimpleX messaging relay: an SMP server (messages) and an
+  XFTP server (large file chunks), plus a Tor hidden service so the relay
+  is reachable as an .onion with no domain or port-forwarding. A clearnet
+  address can be configured as well.
+
+
+  The relay is password-protected (a password is generated on first start
+  and lives in this app's data) so it stays a private relay, not a public
+  one. The certificates and keys in the app data directory ARE the
+  server's identity and address - back them up, or the address changes
+  and every client has to be re-added.
+
+
+  The app page is a status/help page only; the servers themselves speak
+  the SimpleX protocol, not HTTP.
+developer: SimpleX Chat
+website: https://simplex.chat
+dependencies: []
+repo: https://github.com/simplex-chat/simplexmq
+support: https://github.com/simplex-chat/simplexmq/issues
+port: 5225
+gallery: []
+path: ""
+releaseNotes: >-
+  First Sparkles packaging. On first start each server initialises its
+  config under the app data directory (smp-server.ini / xftp-server.ini);
+  set the SMP password in smp-server.ini (key: password, in the [AUTH]
+  section - the generated value is exported as APP_SIMPLEX_SMP_PASSWORD
+  for reference) and set your public address in the ini / ADDR value in
+  docker-compose.yml, then restart the app. Find the smp:// and xftp://
+  server addresses (with certificate fingerprints) in the ini files and
+  first-start logs, and add them in the SimpleX Chat app under Settings >
+  Network & servers. VERIFY before install: image tags (v6.4.1) and the
+  -init flag syntax against the current SimpleX server docs.

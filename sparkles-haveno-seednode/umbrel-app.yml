@@ -1,0 +1,92 @@
+manifestVersion: 1
+id: sparkles-haveno-seednode
+category: crypto
+name: Haveno Seed Node
+version: "0.1.0"
+tagline: EXPERIMENTAL — seed + price node for your own Haveno network instance
+description: >-
+  EXPERIMENTAL / TESTING ONLY. This app packages the operator side of a
+  Haveno network: a seed node (and, later, a price node) for running
+  Justin's OWN Haveno network instance. It is deliberately a separate app
+  from the Haveno client (sparkles-haveno) so each can be installed,
+  uninstalled and tested independently.
+
+
+  The seed node is the bootstrap backbone of a Haveno network: clients
+  connect to it over Tor to discover peers, fetch the offer board, and
+  learn trade fees and the arbitrator list. It needs a Monero node, and
+  uses the one already running on this Umbrel (the stock Monero app,
+  declared as a dependency). A seed node for your own network only
+  matters if clients are built/configured to use it — running it does NOT
+  join or help the RetoSwap network, which has its own seed nodes.
+
+
+  The price node ships DISABLED (see release notes): no verifiable price
+  node container image exists yet, and a placeholder is included rather
+  than a fake.
+
+
+  An arbitrator is NOT an app and is not included here — it is a role
+  registered from a Haveno client. See the release notes for the runbook.
+
+
+  WARNING: the seed node's data folder contains its Tor hidden-service
+  identity and network keys. Back it up before uninstalling — losing it
+  changes the seed node's address that clients must be configured with.
+developer: Haveno
+website: https://haveno.exchange
+dependencies:
+  - monero
+repo: https://github.com/haveno-dex/haveno
+support: https://github.com/haveno-dex/haveno/issues
+port: 8014
+gallery: []
+path: ""
+releaseNotes: >-
+  First packaging (v0.1.0) — operator test harness, not production infra.
+
+
+  PRICE NODE — SHIPS DISABLED, ON PURPOSE: upstream Haveno's price node
+  is a separate application (the pricenode module in the haveno repo).
+  No usable container image could be verified: the Docker Hub repo
+  havenodex/haveno-pricenode exists but has ZERO published tags (checked
+  2026-11-08), and upstream haveno-dex publishes no images at all. The
+  compose file therefore includes the pricenode service commented and
+  disabled via a "disabled" profile. It will be enabled once a real image
+  is built from source and pinned — it is not faked in the meantime.
+
+
+  SEED NODE IMAGE (VERIFY): the seednode service reuses the only
+  published Haveno daemon image (havenodex/haveno-daemon, pinned by
+  digest) with an entrypoint override to the haveno-seednode launcher.
+  VERIFY before relying on it: havenodex/haveno-seednode also has zero
+  published tags, the daemon image's only tag is ARM64 (this Umbrel is
+  amd64) from 2024-10, and the seednode binary name/flags must be
+  confirmed against the final image. See VERIFY comments in
+  docker-compose.yml.
+
+
+  ARBITRATOR RUNBOOK — a manual step, done by Justin only, from the
+  client app (sparkles-haveno), never from this app:
+
+  1. In sparkles-haveno, create/open the client account and wallet you
+     will dedicate to arbitration. Use a DEDICATED wallet for this — do
+     not reuse a personal trading wallet.
+
+  2. Fund that wallet: an arbitrator must be able to post security
+     deposits for the trades they arbitrate.
+
+  3. Register the account as an arbitrator for your network from the
+     client — via the desktop client's arbitrator registration, or the
+     daemon API's arbitrator registration call — using your network's
+     arbitrator privilege key (generated when you create your network
+     instance; keep it offline like a seed phrase).
+
+  4. Understand what you are accepting: the arbitrator's keys can settle
+     disputed trades and move escrowed funds. The arbitrator key is
+     dispute liability — whoever holds it can be forced into, and can
+     abuse, dispute outcomes. There is no support and no undo.
+
+  5. Only then configure your network's clients to list this arbitrator
+     and point at this seed node, and test a full dispute on stagenet
+     before any real funds touch the network.

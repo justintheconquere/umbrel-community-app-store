@@ -1,0 +1,36 @@
+version: "3.7"
+
+services:
+  # NO app_proxy on purpose: Matrix clients and federation servers must
+  # reach the homeserver directly (via the Cloudflare Tunnel). Umbrel
+  # app auth in front would break every client and all federation.
+  server:
+    # VERIFY: tag format on Docker Hub (matrixconduit/matrix-conduit) -
+    # Conduit releases are v0.10.x; confirm "v0.10.15" is the exact tag.
+    image: matrixconduit/matrix-conduit:v0.10.15
+    restart: on-failure
+    environment:
+      # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      # SET THIS TO THE REAL MATRIX DOMAIN BEFORE FIRST START.
+      # The server name is baked into every user ID, room ID and event
+      # the server ever creates. IT CAN NEVER BE CHANGED afterwards
+      # without starting over with an empty database.
+      # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      CONDUIT_SERVER_NAME: matrix.example.com
+      CONDUIT_DATABASE_PATH: /data
+      CONDUIT_PORT: "6167"
+      CONDUIT_ADDRESS: 0.0.0.0
+      # Registration closed: the agency provisions portal accounts.
+      CONDUIT_ALLOW_REGISTRATION: "false"
+      CONDUIT_ALLOW_FEDERATION: "true"
+      CONDUIT_TRUSTED_SERVERS: '["matrix.org"]'
+      CONDUIT_MAX_REQUEST_SIZE: "20000000"
+    ports:
+      - "6167:6167"
+    volumes:
+      # RocksDB database + media + signing keys. Back this up: it is the
+      # whole homeserver.
+      - ${APP_DATA_DIR}/data/db:/data
+    networks:
+      default:
+        ipv4_address: $APP_CONDUIT_IP

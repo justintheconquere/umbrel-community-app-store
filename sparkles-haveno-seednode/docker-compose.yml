@@ -1,0 +1,172 @@
+version: "3.7"
+
+services:
+
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: sparkles-haveno-seednode_web_1
+      APP_PORT: 80
+
+  # Haveno seed node for Justin's OWN network instance. Seed nodes are the
+  # bootstrap backbone of a Haveno network: clients reach them over Tor to
+  # discover peers and fetch the offer board, fees and arbitrator list.
+  seednode:
+    # =====================================================================
+    # VERIFY — IMAGE (checked 2026-11-08):
+    # There is NO published seed node image. Docker Hub
+    # havenodex/haveno-seednode exists as a repo but has ZERO tags, and
+    # upstream haveno-dex publishes no container images at all. This
+    # service therefore reuses the one published daemon image
+    # (havenodex/haveno-daemon, digest-pinned — same pin as
+    # sparkles-haveno) and overrides its entrypoint with the
+    # haveno-seednode launcher from the upstream build (the Gradle build
+    # generates a `haveno-seednode` script; main class
+    # haveno.seednode.SeedNodeMain).
+    # VERIFY before expecting this to start:
+    #   1. The pinned image's only tag is ARM64 (2024-10); this Umbrel is
+    #      amd64. A self-built amd64 image from haveno-dex/haveno (or the
+    #      haveno-reto fork) will very likely be needed; re-pin here.
+    #   2. The haveno-seednode launcher must exist on the image's PATH; if
+    #      the final image only ships the daemon launcher, build a seednode
+    #      variant instead of overriding the entrypoint.
+    #   3. --appDataDir / --appName semantics for the seednode launcher.
+    # =====================================================================
+    image: havenodex/haveno-daemon:latest@sha256:8f8b5ca7e8f921d1e88b492cd4b79bf6795f5a89c663c8697b542bf2ed1fef3c
+    restart: on-failure
+    entrypoint:
+      - "haveno-seednode"
+    environment:
+      HOME: "/seednode"
+    command:
+      - "--appDataDir=/seednode"
+      # appName follows the upstream seed node service example
+      # (haveno-XMR_MAINNET_Seed_<nodePort>).
+      - "--appName=haveno-XMR_MAINNET_Seed_2002"
+      # This seed node serves a mainnet-shaped OWN network instance.
+      # Note: a network is defined by its build (seed nodes, arbitrator
+      # and price node configuration baked into the clients) — flipping
+      # this flag alone does not join RetoSwap or any existing network.
+      - "--baseCurrencyNetwork=XMR_MAINNET"
+      # Seed node P2P port. Reached by clients as a Tor hidden service
+      # (the seed node runs its own Tor); never published to the host.
+      # To run the seed node against an EXTERNAL Tor with a fixed onion
+      # address instead, add: --hiddenServiceAddress=<your .onion>
+      - "--nodePort=2002"
+      # MONERO NODE: his existing node — the stock Umbrel Monero app
+      # (declared dependency). Seed nodes need a local, unrestricted
+      # Monero node; RPC login goes in the dedicated flags (verified in
+      # the Haveno startup-options docs), not in the --xmrNode URI.
+      # VERIFY: installed Monero app must export APP_MONERO_RPC_USER and
+      # APP_MONERO_RPC_PASS (it also exports APP_MONERO_RPC_AUTH as a
+      # combined user:pass string — split it if the two are absent).
+      - "--xmrNode=http://${APP_MONERO_NODE_IP}:${APP_MONERO_RPC_PORT}"
+      - "--xmrNodeUsername=${APP_MONERO_RPC_USER}"
+      - "--xmrNodePassword=${APP_MONERO_RPC_PASS}"
+      # Private Umbrel-network connection to the node, not Tor.
+      - "--useTorForXmr=off"
+    volumes:
+      # Seed node identity: Tor hidden-service keys + network data.
+      # Losing this changes the seed node's onion address — back it up
+      # before uninstalling.
+      - ${APP_DATA_DIR}/data/seednode:/seednode
+    networks:
+      default:
+        ipv4_address: ${APP_HAVENO_SEEDNODE_IP}
+
+  # Haveno price node — DISABLED PLACEHOLDER, intentionally not faked.
+  # Upstream's price node is a separate application (the pricenode module
+  # in haveno-dex/haveno, a Spring service that republishes exchange price
+  # feeds to the network). No usable image exists: havenodex/haveno-
+  # pricenode has ZERO published tags (checked 2026-11-08) and upstream
+  # publishes none. The service below is parked behind the "disabled"
+  # profile so Umbrel never starts it. When a real pricenode image has
+  # been built from source and pinned, remove the profile, uncomment the
+  # command, and re-verify the flags.
+  pricenode:
+    profiles: ["disabled"]
+    # VERIFY: placeholder image — the daemon image does NOT contain the
+    # price node. Replace with the real pricenode image once built.
+    image: havenodex/haveno-daemon:latest@sha256:8f8b5ca7e8f921d1e88b492cd4b79bf6795f5a89c663c8697b542bf2ed1fef3c
+    restart: on-failure
+    environment:
+      HOME: "/pricenode"
+    # command:  # VERIFY — expected shape only, from the upstream pricenode module
+    #   - "--appDataDir=/pricenode"
+    #   - "--baseCurrencyNetwork=XMR_MAINNET"
+    volumes:
+      - ${APP_DATA_DIR}/data/pricenode:/pricenode
+    networks:
+      default:
+        ipv4_address: ${APP_HAVENO_SEEDNODE_PRICENODE_IP}
+
+  # Static status page (the app's only web UI, behind Umbrel app_proxy).
+  web:
+    image: nginx:alpine
+    restart: on-failure
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        cat > /usr/share/nginx/html/index.html <<'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Haveno Seed Node — Sparkles</title>
+        <style>body{font-family:system-ui,sans-serif;max-width:44em;margin:2em auto;padding:0 1em;line-height:1.5}code{background:#eee;padding:.1em .3em;border-radius:3px}.warn{border:1px solid #c0392b;padding:.5em 1em;border-radius:6px}</style>
+        </head>
+        <body>
+        <h1>Haveno seed node (EXPERIMENTAL)</h1>
+        <p>This app is the <strong>operator side</strong> of a Haveno network:
+        a seed node for <strong>your own</strong> Haveno network instance,
+        packaged separately from the Haveno client
+        (<code>sparkles-haveno</code>) so you can install, uninstall and test
+        each on its own.</p>
+
+        <h2>What a seed node does</h2>
+        <p>Seed nodes are the bootstrap backbone of a Haveno network. Clients
+        reach them over <strong>Tor</strong> to discover peers, fetch the offer
+        board, and learn trade fees and the arbitrator list. This one uses the
+        Monero node already running on this Umbrel (the stock Monero app) and
+        publishes no ports — its P2P port rides its Tor hidden service.</p>
+        <p>Important: a Haveno network is defined by its build — the seed
+        nodes, arbitrator and price node baked into the clients. Running this
+        seed node does <em>not</em> join or support the live RetoSwap network,
+        which has its own infrastructure. It only serves clients built or
+        configured to use it.</p>
+
+        <h2>Price node: disabled</h2>
+        <p>The price node service ships <strong>disabled</strong> on purpose:
+        no verifiable container image for upstream's price node exists yet
+        (the Docker Hub repo for it has no published builds). It is included
+        as a clearly marked placeholder and will be switched on only once a
+        real image is built and pinned — it is not faked.</p>
+
+        <div class="warn">
+        <h2>Arbitrator is not an app</h2>
+        <p>There is no arbitrator container here, because an arbitrator is a
+        <strong>role registered from a Haveno client</strong>, not a server.
+        The short version (full runbook is in this app's release notes in the
+        store listing):</p>
+        <ol>
+        <li>In the client app (<code>sparkles-haveno</code>), use a
+        <strong>dedicated</strong> wallet for arbitration and fund it.</li>
+        <li>Register that account as an arbitrator for your network from the
+        client, using your network's arbitrator privilege key.</li>
+        <li>Understand the liability first: arbitrator keys settle disputes
+        and can move escrowed funds. Whoever holds the key carries the
+        dispute risk. This step is yours alone, done manually.</li>
+        </ol>
+        <p>Also: the seed node's data folder (<code>data/seednode</code>)
+        holds its Tor identity — back it up before uninstalling, or the seed
+        node's onion address changes and every configured client breaks.</p>
+        </div>
+        </body>
+        </html>
+        EOF
+        exec nginx -g 'daemon off;'
+    networks:
+      default:
+        ipv4_address: ${APP_HAVENO_SEEDNODE_WEB_IP}

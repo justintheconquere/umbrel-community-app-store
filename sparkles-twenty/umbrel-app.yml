@@ -1,0 +1,35 @@
+manifestVersion: 1
+id: sparkles-twenty
+category: productivity
+name: Twenty CRM
+version: "2.56.1"
+tagline: Open-source CRM (Twenty), packaged for this store
+description: >-
+  Twenty is a modern open-source CRM. This package runs the same stack as
+  the existing Arcane deployment (Twenty v2.56.1 server + worker,
+  PostgreSQL 16, Redis) with all data stored in this app's data directory.
+
+
+  ACCESS: Tailscale-only. Reach it at http://100.122.244.66:3000 on the
+  tailnet. Do NOT expose this app publicly - no Cloudflare Tunnel, no
+  public subdomain, no port forwarding. The CRM holds customer data and
+  its login is staff-only.
+
+
+  Migrating from the Arcane deployment? Follow
+  docs/twenty-migration-runbook.md in this repository - only one Twenty
+  may run at a time.
+
+developer: Twenty
+website: https://twenty.com
+dependencies: []
+repo: https://github.com/twentyhq/twenty
+support: https://github.com/twentyhq/twenty/issues
+port: 3000
+gallery: []
+path: ""
+releaseNotes: >-
+  Initial packaging of Twenty v2.56.1 for the Sparkles store. Server URL
+  is pinned to the Tailscale address (see docker-compose.yml). App secret
+  and database password are generated on first install by exports.sh and
+  persisted in the app's exports env file.

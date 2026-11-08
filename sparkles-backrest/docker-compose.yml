@@ -1,0 +1,31 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: sparkles-backrest_server_1
+      APP_PORT: 9898
+
+  server:
+    image: garethgeorge/backrest:v1.9.2
+    restart: on-failure
+    environment:
+      BACKREST_PORT: "9898"
+      BACKREST_DATA: /data
+      BACKREST_CONFIG: /data/config/config.json
+      TZ: America/New_York
+      XDG_CACHE_HOME: /cache
+    volumes:
+      - ${APP_DATA_DIR}/data/data:/data
+      - ${APP_DATA_DIR}/data/cache:/cache
+      - ${APP_DATA_DIR}/data/tmp:/tmp
+      # Default on-disk location for repositories kept on internal storage.
+      - ${APP_DATA_DIR}/repos:/repos
+      # Backup SOURCES: the parent of this app's data dir is the Umbrel
+      # app-data folder, so this read-only mount covers every installed
+      # app's data (including this app's neighbours). Sources appear in
+      # the container at /backup-sources/app-data/<app-id>/...
+      - ${APP_DATA_DIR}/../:/backup-sources/app-data:ro
+    networks:
+      default:
+        ipv4_address: $APP_BACKREST_IP

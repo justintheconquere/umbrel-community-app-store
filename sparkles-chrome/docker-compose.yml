@@ -1,0 +1,32 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: sparkles-chrome_web_1
+      APP_PORT: 3000
+
+  web:
+    # VERIFY: confirm this exact build tag exists on lscr.io/linuxserver/chrome
+    # before installing (linuxserver publishes per-build tags like this one).
+    # Fallback if the tag is missing: lscr.io/linuxserver/chromium, pinned to
+    # a version tag the same way - same Selkies base, same /config layout.
+    image: lscr.io/linuxserver/chrome:142.0.7444.175
+    restart: on-failure
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: America/New_York
+    # Chrome's sandbox needs a large shared-memory segment or tabs crash.
+    shm_size: "2gb"
+    security_opt:
+      # linuxserver's Chrome image requires seccomp=unconfined to launch.
+      - seccomp=unconfined
+    volumes:
+      # The whole profile lives here: logins, cookies, history AND the
+      # Downloads folder - this is what makes upload/download work, and why
+      # this directory must be treated as sensitive.
+      - ${APP_DATA_DIR}/data/config:/config
+    networks:
+      default:
+        ipv4_address: $APP_CHROME_IP

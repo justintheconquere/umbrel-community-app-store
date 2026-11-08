@@ -1,0 +1,57 @@
+manifestVersion: 1
+id: sparkles-btcpay-monero
+category: crypto
+name: BTCPay Server (Monero only)
+version: "2.4.7"
+tagline: BTCPay Server wired for Monero only — no Bitcoin node, no NBXplorer
+description: >-
+  A Monero-only build of BTCPay Server for Voodoo Bazaar, served publicly at
+  pay.voodoobazaar.com. There is deliberately NO Bitcoin node and NO NBXplorer
+  in this package: BTCPay talks only to a monero-wallet-rpc container, which in
+  turn talks to the Monero node you already run.
+
+
+  Requirements: the official Umbrel Monero app must be installed first (it is
+  declared as a dependency). This app reuses that already-synced node over
+  Umbrel's internal network — Monero RPC never traverses Cloudflare and is
+  never exposed to the internet.
+
+
+  Public access: this app does NOT sit behind the Umbrel login (that would
+  break buyer checkout, payment callbacks and webhooks). It publishes its web
+  port directly. To make it reachable, add a route for pay.voodoobazaar.com in
+  your EXISTING cloudflared tunnel pointing at localhost:23000. TLS is handled
+  by Cloudflare; BTCPay is told its public host is
+  https://pay.voodoobazaar.com.
+
+
+  First run: open the app and create the admin account IMMEDIATELY — once the
+  tunnel route is live the server is public, and the first account registered
+  becomes the administrator. Then install the Monero plugin (plus Vendor Pay,
+  FileSeller, Dynamic Reports, Nostr/Shopstr and ServerMessage as needed) from
+  BTCPay's own plugin UI under Server Settings. Plugins are stored in the
+  app's data directory, so they persist across app updates.
+
+
+  Keep this app updated: BTCPay versions 2.4.1 and older carried a critical
+  vulnerability (CVE-2026-119757) that was actively exploited to drain hot
+  wallets. This package pins 2.4.7, which includes the fix.
+developer: BTCPay Server
+website: https://btcpayserver.org
+dependencies:
+  - monero
+repo: https://github.com/btcpayserver/btcpayserver
+support: https://github.com/btcpayserver/btcpayserver/issues
+port: 23000
+gallery: []
+path: ""
+releaseNotes: >-
+  Initial package: BTCPay Server 2.4.7, Monero only by design — no Bitcoin
+  node and no NBXplorer are installed. Depends on the official Umbrel Monero
+  app for the node (RPC stays on the internal Umbrel network only; it never
+  goes through Cloudflare). Route pay.voodoobazaar.com to localhost:23000 in
+  your existing cloudflared tunnel, create the admin account immediately on
+  first boot, then install the Monero plugin and the marketplace plugins
+  (Vendor Pay, FileSeller, etc.) from BTCPay's plugin UI — they persist in
+  the data directory across updates. Pinned to 2.4.7 because versions 2.4.1
+  and older were actively exploited (CVE-2026-119757, fixed in 2.4.2).

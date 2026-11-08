@@ -1,0 +1,36 @@
+manifestVersion: 1
+id: sparkles-arch-phosh
+name: Arch + Phosh
+tagline: A phone-shaped Arch Linux desktop (Phosh) in your browser
+icon: ""
+category: productivity
+version: "0.1.0"
+port: 8015
+description: >-
+  Arch Linux running the Phosh mobile shell in a container, streamed to
+  your browser with noVNC — open it on your phone and drive it with
+  touch. The session is a 720x1440 headless wlroots output rendered in
+  software; phoc runs Phosh, wayvnc serves the session to the noVNC
+  sidecar, and Umbrel auth gates the whole thing.
+
+
+  EXPERIMENTAL v0.1: the shell and touch input work over VNC; expect
+  rough edges (no GPU, no sound, modem/mobile features of Phosh are
+  decorative in a container). Your home directory persists in the app
+  data dir.
+
+developer: Justin Bryan (packaging) / Arch Linux + Phosh upstream
+website: https://phosh.mobi
+submitter: Justin Bryan
+repo: https://github.com/justintheconquere/umbrel-community-app-store
+support: https://github.com/justintheconquere/umbrel-community-app-store/issues
+gallery: []
+releaseNotes: >-
+  First package. Custom image (Arch + phosh + phoc + wayvnc +
+  squeekboard) built in GitHub Actions to GHCR. If the session does not
+  come up, check the desktop container log for the phoc/wayvnc lines —
+  the entrypoint waits for the Wayland socket and prints what failed.
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
