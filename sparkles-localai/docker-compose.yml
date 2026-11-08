@@ -1,0 +1,45 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # <app-id>_<docker-service-name>_1
+      APP_HOST: sparkles-localai_server_1
+      APP_PORT: 8080
+
+  server:
+    # Custom image built by this repo's GitHub Actions (docker/localai).
+    image: ghcr.io/justintheconquere/sparkles-localai:v4.12.1
+    restart: on-failure
+    # Startup health gate: fail loud, never serve on CPU silently.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if ! nvidia-smi >/dev/null 2>&1; then
+          echo "FATAL: no NVIDIA GPU visible in container — refusing to start (CPU fallback is disabled by design)"; exit 1
+        fi
+        if [ ! -f /backends/cuda13-llama-cpp/run.sh ]; then
+          echo "FATAL: cuda13-llama-cpp backend missing from image — refusing to start"; exit 1
+        fi
+        exec /entrypoint.sh "$@"
+      - --
+    command: ["--address=:8080", "--models-path=/models", "--localai-config-dir=/configuration"]
+    environment:
+      TZ: America/New_York
+      LOCALAI_FORCE_META_BACKEND_CAPABILITY: "nvidia"
+      THREADS: "16"
+      CONTEXT_SIZE: "8192"
+    volumes:
+      - ${APP_DATA_DIR}/data/models:/models
+      - ${APP_DATA_DIR}/data/configuration:/configuration
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      default:
+        ipv4_address: $APP_LOCALAI_IP
