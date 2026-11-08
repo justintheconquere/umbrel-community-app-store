@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-gluetun
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-gluetun.svg
 category: networking
 name: Gluetun VPN
 version: "1.0.0"
