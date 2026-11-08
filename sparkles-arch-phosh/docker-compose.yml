@@ -8,22 +8,67 @@ services:
       APP_PORT: 8080
 
   desktop:
-    # Custom image built by this repo's GitHub Actions (docker/arch-phosh).
-    image: ghcr.io/justintheconquere/sparkles-arch-phosh:v0.1.0
+    # v0.2 design (2026-11-08): NO custom image. v0.1 pointed at a GHCR
+    # image that does not exist (the repo's image-build workflow could
+    # not be pushed), so the install failed at pull. This service uses
+    # the official Arch image and installs the Phosh stack into the
+    # container layer on first start instead. First start therefore
+    # takes several minutes (package download) — watch the app log.
+    # The layer persists across restarts; an app update/recreate
+    # repeats the one-time install. docker/arch-phosh keeps the baked
+    # -image version for if/when CI builds are enabled.
+    # PIN EXCEPTION: archlinux only publishes rolling tags for its
+    # official image; there is no version tag to pin.
+    image: archlinux:latest
     restart: on-failure
     environment:
       TZ: America/New_York
-      PHOC_HEADLESS_WIDTH: "720"
-      PHOC_HEADLESS_HEIGHT: "1440"
     volumes:
       - ${APP_DATA_DIR}/data/home:/home/user
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -u
+        if [ ! -x /usr/bin/phosh ]; then
+          echo "[sparkles-arch-phosh] first start: installing Phosh stack (several minutes)..."
+          pacman -Syu --noconfirm \
+            phosh phoc wayvnc squeekboard \
+            gnome-console gnome-text-editor epiphany \
+            xdg-desktop-portal xdg-desktop-portal-wlr \
+            pipewire wireplumber ttf-dejavu noto-fonts \
+            || { echo "FATAL: pacman install failed"; exit 1; }
+          id user >/dev/null 2>&1 || useradd -m -s /bin/bash user
+          echo "[sparkles-arch-phosh] install complete"
+        fi
+        export HOME=/home/user
+        export XDG_RUNTIME_DIR=/tmp/xdg-runtime
+        mkdir -p "$$XDG_RUNTIME_DIR" && chmod 700 "$$XDG_RUNTIME_DIR"
+        export WLR_BACKENDS=headless
+        export WLR_LIBINPUT_NO_DEVICES=1
+        export LIBGL_ALWAYS_SOFTWARE=1
+        export WLR_RENDERER=pixman
+        # Phone-shaped headless output (720x1440) comes from phoc's
+        # config; wlroots headless defaults are overridden by phosh's
+        # own scale/output handling once the session is up.
+        runuser -u user -- env HOME=/home/user XDG_RUNTIME_DIR=$$XDG_RUNTIME_DIR \
+          WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 \
+          LIBGL_ALWAYS_SOFTWARE=1 WLR_RENDERER=pixman \
+          bash -c '
+            phoc -C /usr/share/phosh/phoc.ini &
+            PHOC_PID=$$!
+            for i in $$(seq 1 30); do [ -S "$$XDG_RUNTIME_DIR/wayland-0" ] && break; sleep 1; done
+            export WAYLAND_DISPLAY=wayland-0
+            wayvnc --port=5900 0.0.0.0 &
+            wait -n $$PHOC_PID $$!
+          ' &
+        wait $$!
     networks:
       default:
         ipv4_address: $APP_ARCH_PHOSH_DESKTOP_IP
 
   web:
-    # noVNC + websockify front end. PIN EXCEPTION check before install:
-    # verify/pin the current theasp/novnc tag — upstream tags irregularly.
+    # noVNC + websockify front end (tag verified on Docker Hub).
     image: theasp/novnc:latest
     restart: on-failure
     environment:
