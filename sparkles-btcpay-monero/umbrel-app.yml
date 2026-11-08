@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-btcpay-monero
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-btcpay-monero.svg
 category: crypto
 name: BTCPay Server (Monero only)
 version: "2.4.7"
