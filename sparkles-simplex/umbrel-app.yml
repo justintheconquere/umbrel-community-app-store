@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-simplex
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-simplex.svg
 category: social
 name: SimpleX Server
 version: "1.0.0"
