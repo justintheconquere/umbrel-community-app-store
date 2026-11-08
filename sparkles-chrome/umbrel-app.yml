@@ -1,0 +1,30 @@
+manifestVersion: 1
+id: sparkles-chrome
+category: productivity
+name: Chrome
+version: "1.0.0"
+tagline: Real Google Chrome, streamed to your browser
+description: >-
+  Google Chrome running in a container and streamed to any browser via
+  Selkies (linuxserver/chrome image). The full browser profile - logins,
+  cookies, history - plus the Downloads folder persist in this app's data
+  directory, so file upload and download work exactly like a local browser.
+
+
+  Treat this app like a logged-in computer: the profile is SENSITIVE because
+  it holds your sessions and saved logins. It is protected only by Umbrel's
+  app authentication - never expose it publicly, and include it in backups
+  only if you are comfortable with what those backups contain.
+developer: LinuxServer.io
+website: https://www.google.com/chrome/
+dependencies: []
+repo: https://github.com/linuxserver/docker-chrome
+support: https://github.com/linuxserver/docker-chrome/issues
+port: 3004
+gallery: []
+path: ""
+releaseNotes: >-
+  First Sparkles packaging of linuxserver/chrome (Selkies). Profile and
+  Downloads persist in the app data directory. VERIFY before install: the
+  pinned image tag in docker-compose.yml exists on lscr.io (see the comment
+  there for the Chromium fallback).
