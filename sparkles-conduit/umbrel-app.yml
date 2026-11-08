@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-conduit
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-conduit.svg
 category: social
 name: Conduit (Matrix)
 version: "1.0.0"
