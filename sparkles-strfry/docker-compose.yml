@@ -1,0 +1,67 @@
+version: "3.7"
+
+services:
+  # NO app_proxy: Nostr clients connect to the relay websocket directly.
+  # Public face: wss://relay.voodoobazaar.com via the existing Cloudflare
+  # Tunnel -> localhost:7777 (domain is a placeholder until DNS is set).
+  relay:
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # PIN EXCEPTION - PIN BEFORE INSTALL, documented exception to the no-:latest rule:
+    # dockurr/strfry upstream publishes latest-only tags, so no honest
+    # version tag exists to pin here. At first install, pin this image
+    # by digest instead (docker pull dockurr/strfry, copy the sha256
+    # digest, and reference dockurr/strfry@sha256:<digest>).
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    image: dockurr/strfry:latest
+    restart: on-failure
+    command:
+      - sh
+      - -c
+      - |
+        if [ ! -f /data/strfry.conf ]; then
+          cat > /data/strfry.conf <<'CONF'
+        db = "/data/strfry-db/"
+
+        dbParams {
+            maxreaders = 256
+            lockfile = "AUTO"
+        }
+
+        relay {
+            bind = "0.0.0.0"
+            port = 7777
+            nofiles = 1000000
+            realIpHeader = "x-forwarded-for"
+
+            info {
+                name = "Voodoo Bazaar"
+                description = "Nostr relay for Voodoo Bazaar seller identity, NIP-05 and Shopstr"
+                pubkey = ""
+                contact = ""
+            }
+
+            ## WRITE POLICY - ENABLE BEFORE PUBLIC EXPOSURE.
+            ## An open relay fills with spam within days. strfry write-policy
+            ## plugins are executables that read one JSON event per line on
+            ## stdin and answer accept/reject. Point this at an allowlist
+            ## plugin that only accepts Justin's npub + approved seller
+            ## npubs, e.g. a small script kept at /data/policy/allowlist.sh,
+            ## then uncomment:
+            # writePolicy {
+            #     plugin = "/data/policy/allowlist.sh"
+            # }
+        }
+        CONF
+          echo "Wrote default /data/strfry.conf (write policy still DISABLED - see the file)."
+        fi
+        ln -sf /data/strfry.conf /etc/strfry.conf 2>/dev/null || true
+        exec strfry --config=/data/strfry.conf relay
+    ports:
+      - "7777:7777"
+    volumes:
+      # strfry.conf, the LMDB event database (strfry-db/) and the future
+      # write-policy plugin all live here.
+      - ${APP_DATA_DIR}/data:/data
+    networks:
+      default:
+        ipv4_address: $APP_STRFRY_IP
