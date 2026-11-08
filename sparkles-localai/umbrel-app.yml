@@ -1,0 +1,37 @@
+manifestVersion: 1
+id: sparkles-localai
+name: LocalAI (5090 build)
+tagline: LocalAI compiled for this machine — CUDA 13, RTX 5090 (sm_120)
+icon: ""
+category: ai
+version: "4.12.1"
+port: 8081
+description: >-
+  A reproducible Umbrel package of LocalAI v4.12.1 with the CUDA 13
+  llama.cpp backend baked into a custom image (built in GitHub Actions,
+  published to GHCR — never built on this machine). It replaces the
+  hand-fixed install from 2026-11-06: the backend's glibc 2.39 loader fix
+  is part of the image, and the server REFUSES to start if the GPU or the
+  CUDA backend is missing — it will never silently fall back to CPU.
+
+
+  Access is Umbrel-auth only (LAN / Tailscale). Point Goose, Open WebUI
+  and other apps at this app's API on port 8080 inside the Umbrel network
+  (static IP in exports.sh).
+
+developer: Justin Bryan (packaging) / LocalAI upstream
+website: https://localai.io
+submitter: Justin Bryan
+repo: https://github.com/justintheconquere/umbrel-community-app-store
+support: https://github.com/justintheconquere/umbrel-community-app-store/issues
+gallery: []
+releaseNotes: >-
+  v4.12.1, first package. After installing, benchmark before switching
+  anything over: the hand-fixed install hit ~140 tok/s (qwen3.8, 100%
+  VRAM) and ~1s on the long-prompt test vs ~38s on CPU. If this build
+  does not match that, do not swap endpoints. Models live in the app data
+  dir and are NOT backed up (re-downloadable).
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
