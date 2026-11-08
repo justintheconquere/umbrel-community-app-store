@@ -9,6 +9,8 @@ services:
       APP_PORT: 3000
     
   server:
+    # PIN EXCEPTION: the store template's own reference app; upstream
+    # publishes this demo image as :latest only. Kept as a reference.
     image: getumbrel/community-app-store-hello-world:latest
     user: "1000:1000"
     init: true
