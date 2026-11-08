@@ -1,0 +1,146 @@
+version: "3.7"
+
+services:
+
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: sparkles-haveno_web_1
+      APP_PORT: 80
+
+  # Headless Haveno client daemon (havenod). No GUI — the desktop app is a
+  # separate thing; this is only the backend daemon, for testing.
+  daemon:
+    # =====================================================================
+    # VERIFY — IMAGE (checked 2026-11-08):
+    # Upstream haveno-dex publishes NO official container image (no GHCR
+    # packages on the haveno repo). The only published daemon image found
+    # is Docker Hub havenodex/haveno-daemon (the haveno.com / Reto project
+    # bot), pinned below by digest. Two problems:
+    #   1. Its ONLY tag ("latest", pushed 2024-10-10) is an ARM64 build.
+    #      This Umbrel is amd64 (Intel i9-14900KF) — the image will not run
+    #      natively. Expect to replace this with a self-built amd64 image
+    #      from https://github.com/haveno-dex/haveno (or the RetoSwap fork
+    #      https://github.com/retoaccess1/haveno-reto) and re-pin here.
+    #   2. The image's entrypoint is assumed to be the haveno-daemon
+    #      launcher, with the flags below passed as arguments. VERIFY the
+    #      entrypoint/working dir against the final image; if the launcher
+    #      is named differently (haveno-daemon vs havenod), adjust.
+    # VERIFY — DATA DIR: --appDataDir is the standard Bisq/Haveno option
+    # for relocating app data; VERIFY it is honoured by the final image so
+    # the wallet/seed actually land in the /haveno volume below.
+    # =====================================================================
+    image: havenodex/haveno-daemon:latest@sha256:8f8b5ca7e8f921d1e88b492cd4b79bf6795f5a89c663c8697b542bf2ed1fef3c
+    restart: on-failure
+    environment:
+      HOME: "/haveno"
+    command:
+      - "--appDataDir=/haveno"
+      - "--appName=Haveno"
+      # NETWORK: XMR_MAINNET is the RetoSwap live network's setting.
+      # Upstream haveno-dex defaults its own builds to stagenet and has no
+      # live mainnet network of its own — which network you actually join
+      # depends on the image/build (see manifest releaseNotes). This is a
+      # first-run decision: confirm before funding the wallet.
+      - "--baseCurrencyNetwork=XMR_MAINNET"
+      - "--useDevPrivilegeKeys=false"
+      - "--useLocalhostForP2P=false"
+      # MONERO NODE: his existing node — the stock Umbrel Monero app
+      # (declared dependency, so its exports are available here). RPC login
+      # is passed with Haveno's dedicated flags (verified in the Haveno
+      # startup-options docs): --xmrNodeUsername / --xmrNodePassword.
+      # Do NOT embed user:pass@ in the --xmrNode URI.
+      # VERIFY: the installed Monero app must export APP_MONERO_RPC_USER
+      # and APP_MONERO_RPC_PASS (current versions also export
+      # APP_MONERO_RPC_AUTH as a combined user:pass string — if only that
+      # is present, split it into the two flags below).
+      - "--xmrNode=http://${APP_MONERO_NODE_IP}:${APP_MONERO_RPC_PORT}"
+      - "--xmrNodeUsername=${APP_MONERO_RPC_USER}"
+      - "--xmrNodePassword=${APP_MONERO_RPC_PASS}"
+      # The node connection rides the private Umbrel network, not Tor
+      # (Haveno's security docs: LAN/private node => useTorForXmr=OFF).
+      - "--useTorForXmr=off"
+      # P2P node port — carried over Tor as a hidden service by the daemon
+      # itself; never published to the host.
+      - "--nodePort=9999"
+      # LOCAL API (gRPC): internal only. Bound to all container interfaces
+      # so tools on the Umbrel box / app network can reach it at
+      # ${APP_HAVENO_DAEMON_IP}:9998, but the port is EXPOSED, never
+      # PUBLISHED — nothing here is reachable from the internet or LAN
+      # directly. The API password (generated in exports.sh) is the only
+      # thing standing between the app network and full wallet control:
+      # anyone who can reach this port AND has the password can move funds.
+      - "--apiPort=9998"
+      - "--apiBindAddress=0.0.0.0"
+      - "--apiPassword=${APP_HAVENO_API_PASSWORD}"
+    expose:
+      - "9998"
+    volumes:
+      # Wallet, seed and account data — SENSITIVE, funds-critical.
+      # Back this folder up (encrypted) before uninstall/update.
+      - ${APP_DATA_DIR}/data/haveno:/haveno
+    networks:
+      default:
+        ipv4_address: ${APP_HAVENO_DAEMON_IP}
+
+  # Static status page (the app's only web UI, behind Umbrel app_proxy).
+  web:
+    image: nginx:alpine
+    restart: on-failure
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        cat > /usr/share/nginx/html/index.html <<'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Haveno (Daemon) — Sparkles</title>
+        <style>body{font-family:system-ui,sans-serif;max-width:44em;margin:2em auto;padding:0 1em;line-height:1.5}code{background:#eee;padding:.1em .3em;border-radius:3px}.warn{border:1px solid #c0392b;padding:.5em 1em;border-radius:6px}</style>
+        </head>
+        <body>
+        <h1>Haveno — client daemon (EXPERIMENTAL)</h1>
+        <p>This app is <strong>daemon-only</strong>, built for install/uninstall
+        testing. There is no trading interface here: the Haveno daemon
+        (<code>havenod</code>) runs headless, joins the Haveno peer-to-peer
+        network over <strong>Tor</strong>, and talks to the Monero node already
+        running on this Umbrel (the stock Monero app). No ports are published —
+        P2P rides Tor and the API stays inside the Umbrel app network.</p>
+
+        <h2>Reaching the API</h2>
+        <p>The daemon's gRPC API listens at <code>10.21.42.10:9998</code>,
+        reachable from this Umbrel box and other apps on its internal network —
+        not from the internet. Use a Haveno API client from the box (the
+        <code>haveno</code> CLI / haveno-ts from the Haveno project) with the
+        API password generated at first start. The password is stored in the
+        app's <code>.env</code> file in the app data directory
+        (<code>APP_HAVENO_API_PASSWORD</code>). Treat it like a wallet
+        password: the API has full control of the daemon's wallet.</p>
+
+        <h2>Which network?</h2>
+        <p>The daemon is configured for <code>XMR_MAINNET</code> — the setting
+        used by <strong>RetoSwap</strong>, the live Haveno network. Upstream
+        haveno-dex's own builds default to stagenet and upstream runs no live
+        mainnet network. Confirm which network the installed image actually
+        joins <em>before</em> funding anything.</p>
+
+        <div class="warn">
+        <h2>Seed &amp; wallet backup — read this</h2>
+        <p>The app's data folder (<code>data/haveno</code>) holds your Haveno
+        wallet and its seed. <strong>If you lose it, you lose access to funds
+        locked in trades and to the wallet balance.</strong> Back it up
+        (encrypted, offline copy) before uninstalling or updating this app, and
+        write the wallet seed down like any other Monero seed.</p>
+        <p><strong>Before using real funds:</strong> check the current Haveno
+        and RetoSwap security releases and advisories — exploits affecting
+        Haveno software were reported in 2026. Start with tiny test amounts.</p>
+        </div>
+        </body>
+        </html>
+        EOF
+        exec nginx -g 'daemon off;'
+    networks:
+      default:
+        ipv4_address: ${APP_HAVENO_WEB_IP}
