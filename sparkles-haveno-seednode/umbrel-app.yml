@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-haveno-seednode
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-haveno-seednode.svg
 category: crypto
 name: Haveno Seed Node
 version: "0.1.0"
