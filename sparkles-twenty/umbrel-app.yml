@@ -1,5 +1,6 @@
 manifestVersion: 1
 id: sparkles-twenty
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-twenty.svg
 category: productivity
 name: Twenty CRM
 version: "2.56.1"
