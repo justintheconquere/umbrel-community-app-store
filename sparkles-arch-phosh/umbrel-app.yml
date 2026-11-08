@@ -2,9 +2,9 @@ manifestVersion: 1
 id: sparkles-arch-phosh
 name: Arch + Phosh
 tagline: A phone-shaped Arch Linux desktop (Phosh) in your browser
-icon: ""
+icon: https://raw.githubusercontent.com/justintheconquere/umbrel-community-app-store/master/icons/sparkles-arch-phosh.svg
 category: productivity
-version: "0.1.0"
+version: "0.2.0"
 port: 8015
 description: >-
   Arch Linux running the Phosh mobile shell in a container, streamed to
@@ -26,8 +26,13 @@ repo: https://github.com/justintheconquere/umbrel-community-app-store
 support: https://github.com/justintheconquere/umbrel-community-app-store/issues
 gallery: []
 releaseNotes: >-
-  First package. Custom image (Arch + phosh + phoc + wayvnc +
-  squeekboard) built in GitHub Actions to GHCR. If the session does not
+  First package. v0.2.0: no custom image — v0.1 pointed at a GHCR image that does not
+  exist (the repo's image-build workflow could not be pushed), so the
+  install failed at pull. The desktop service now uses the official
+  Arch image and installs the Phosh stack on FIRST START: expect the
+  first start to take several minutes (package downloads) — watch the
+  app log for '[sparkles-arch-phosh] install complete'. Restarts are
+  fast; an app update repeats the one-time install. If the session does not
   come up, check the desktop container log for the phoc/wayvnc lines —
   the entrypoint waits for the Wayland socket and prints what failed.
 dependencies: []
