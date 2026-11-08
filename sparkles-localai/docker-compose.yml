@@ -8,8 +8,14 @@ services:
       APP_PORT: 8080
 
   server:
-    # Custom image built by this repo's GitHub Actions (docker/localai).
-    image: ghcr.io/justintheconquere/sparkles-localai:v4.12.1
+    # v0.2 (2026-11-08): the official CUDA 13 flavor image. v0.1 pointed
+    # at a custom GHCR image that does not exist (the repo's image-build
+    # workflow could not be pushed), so the install failed at pull. The
+    # official gpu-nvidia-cuda-13 image ships its backends preinstalled;
+    # benchmark before swapping endpoints (see releaseNotes) — if its
+    # bundled backend hits the glibc loader issue from 2026-11-06, the
+    # custom build in docker/localai is the fallback once CI is enabled.
+    image: localai/localai:v4.12.1-gpu-nvidia-cuda-13
     restart: on-failure
     # Startup health gate: fail loud, never serve on CPU silently.
     entrypoint:
@@ -19,8 +25,8 @@ services:
         if ! nvidia-smi >/dev/null 2>&1; then
           echo "FATAL: no NVIDIA GPU visible in container — refusing to start (CPU fallback is disabled by design)"; exit 1
         fi
-        if [ ! -f /backends/cuda13-llama-cpp/run.sh ]; then
-          echo "FATAL: cuda13-llama-cpp backend missing from image — refusing to start"; exit 1
+        if ! find /usr/local/share /backends -maxdepth 4 -iname '*cuda*llama*' 2>/dev/null | grep -q .; then
+          echo "WARNING: no CUDA llama backend found in expected locations — check the log after start; if models run on CPU, do not swap endpoints"
         fi
         exec /entrypoint.sh "$@"
       - --
