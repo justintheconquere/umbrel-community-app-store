@@ -7,11 +7,10 @@ services:
   # invite-only auth is the only gate - see the security warning in
   # umbrel-app.yml. Pilot on Tailscale/LAN before any public exposure.
   app:
-    # VERIFY image coordinates before install: upstream
-    # (lilremark/twentycrmclientportal) may not publish a prebuilt
-    # image under these coordinates - if this pull fails, the app must
-    # be built from the upstream repo and the image reference updated.
-    image: ghcr.io/lilremark/twentycrmclientportal:v2.0.0
+    # Image verified on Docker Hub 2026-11-08 (the GHCR coordinates in
+    # v1 of this package did not exist — upstream publishes to Docker
+    # Hub as lilremark/twentycrmclientportal; 2.1.1 is the current tag).
+    image: lilremark/twentycrmclientportal:2.1.1
     restart: on-failure
     depends_on:
       - db
